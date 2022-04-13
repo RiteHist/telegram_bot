@@ -6,12 +6,18 @@ from telegram import ReplyKeyboardMarkup
 
 load_dotenv()
 secret_token = os.getenv('TOKEN')
-updater = Updater(token=secret_token)
 kots_url = 'https://api.thecatapi.com/v1/images/search'
 
 
 def get_new_kot():
-    response = requests.get(kots_url).json()
+    try:
+        response = requests.get(kots_url)
+    except Exception as err:
+        print(err)
+        new_url = 'https://api.thedogapi.com/v1/images/search'
+        response = requests.get(new_url)
+
+    response = response.json()
     kato = response[0].get('url')
     return kato
 
@@ -38,8 +44,14 @@ def on_start(update, context):
     context.bot.send_message(chat_id=chat.id, text=msg, reply_markup=button)
 
 
-updater.dispatcher.add_handler(CommandHandler('start', on_start))
-updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
-updater.dispatcher.add_handler(MessageHandler(Filters.text, say_anything))
-updater.start_polling()
-updater.idle()
+def main():
+    updater = Updater(token=secret_token)
+    updater.dispatcher.add_handler(CommandHandler('start', on_start))
+    updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
+    updater.dispatcher.add_handler(MessageHandler(Filters.text, say_anything))
+    updater.start_polling()
+    updater.idle()
+
+
+if __name__ == '__main__':
+    main()
