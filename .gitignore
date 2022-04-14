@@ -1,2 +1,3 @@
 venv
 /CoolCatBot/.env
+*.log
