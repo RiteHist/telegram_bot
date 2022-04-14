@@ -88,13 +88,13 @@ def say_anything(update, context):
     context.bot.send_message(chat_id=chat.id, text='What is up, my dude')
 
 
-def on_start(update, context, job_queue):
+def on_start(update, context):
     chat = update.effective_chat
     name = update.message.chat.first_name
     msg = f'I am now turned on... by you, {name} :^)'
     button = MAIN_BUTTONS
     context.bot.send_message(chat_id=chat.id, text=msg, reply_markup=button)
-    job_queue.run_repeating(staying_alive, 600)
+    context.job.run_repeating(staying_alive, 600)
 
 
 def on_homework(update, context):
@@ -112,8 +112,7 @@ def on_homework(update, context):
 def main():
     updater = Updater(token=secret_token)
     updater.dispatcher.add_handler(CommandHandler('homework', on_homework))
-    updater.dispatcher.add_handler(CommandHandler('start', on_start,
-                                                  pass_job_queue=True))
+    updater.dispatcher.add_handler(CommandHandler('start', on_start))
     updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
     updater.dispatcher.add_handler(MessageHandler(Filters.text, say_anything))
     updater.start_polling()
