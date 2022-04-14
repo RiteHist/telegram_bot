@@ -1,1 +1,1 @@
-web: python CoolCatBot/main.py
+worker: python CoolCatBot/main.py
