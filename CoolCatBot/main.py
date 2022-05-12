@@ -63,7 +63,7 @@ def get_homework_status():
         return messages
 
     homeworks = status.json().get('homeworks')
-
+    logger.info(f'answer from api is {str(homeworks)}')
     if homeworks:
         for work in homeworks:
             stat = work.get('status')
