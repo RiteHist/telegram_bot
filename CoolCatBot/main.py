@@ -5,30 +5,38 @@ import time
 from dotenv import load_dotenv
 import requests
 from telegram.ext import Updater, Filters, MessageHandler, CommandHandler
-from telegram import ReplyKeyboardMarkup
+from telegram import InlineKeyboardButton, ReplyKeyboardMarkup
 
 load_dotenv()
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-handler = RotatingFileHandler('CoolCatBot/cat_log.log',
-                              maxBytes=5000000, backupCount=3)
-formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 secret_token = os.getenv('TOKEN')
 yan_token = os.getenv('YANTOKEN')
 kots_url = 'https://api.thecatapi.com/v1/images/search'
 yandex_homework_url = ('https://practicum.yandex.ru/api/'
                        'user_api/homework_statuses/')
 google_url = 'https://www.google.com/'
-cool_time = int(time.time())
-MAIN_BUTTONS = ReplyKeyboardMarkup([['/newcat',
-                                   'Are you single?'],
-                                    ['/homework',
-                                     'Where are you now?']
-                                    ], resize_keyboard=True)
+
+
+def init_buttons():
+    btn_newcat = InlineKeyboardButton('Give me a cool cat',
+                                      callback_data='/newcat')
+    btn_homework = InlineKeyboardButton('Check my homework',
+                                        callback_data='/homework')
+    buttons = ReplyKeyboardMarkup([[btn_newcat], [btn_homework]],
+                                  resize_keyboard=True)
+    return buttons
+
+
+def init_logger():
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    handler = RotatingFileHandler('CoolCatBot/cat_log.log',
+                                  maxBytes=5000000, backupCount=3)
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
 
 
 def staying_alive():
@@ -57,13 +65,11 @@ def get_homework_status():
     try:
         status = requests.get(yandex_homework_url,
                               headers=headers, params=payload)
-    except Exception:
-        logger.exception('Some shit happened trying to reach yandex homework')
-        messages.append('ERROR, смотри логи, негор')
-        return messages
+    except Exception as e:
+        raise requests.exceptions.ConnectionError() from e
 
     homeworks = status.json().get('homeworks')
-    logger.info(f'answer from api is {str(homeworks)}')
+    logging.info(f'answer from api is {str(homeworks)}')
     if homeworks:
         for work in homeworks:
             stat = work.get('status')
@@ -92,7 +98,7 @@ def on_start(update, context):
     chat = update.effective_chat
     name = update.message.chat.first_name
     msg = f'I am now turned on... by you, {name} :^)'
-    button = MAIN_BUTTONS
+    button = init_buttons()
     context.bot.send_message(chat_id=chat.id, text=msg, reply_markup=button)
     context.job.run_repeating(staying_alive, 600)
 
@@ -110,13 +116,19 @@ def on_homework(update, context):
 
 
 def main():
-    updater = Updater(token=secret_token)
-    updater.dispatcher.add_handler(CommandHandler('homework', on_homework))
-    updater.dispatcher.add_handler(CommandHandler('start', on_start))
-    updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
-    updater.dispatcher.add_handler(MessageHandler(Filters.text, say_anything))
-    updater.start_polling()
-    updater.idle()
+    logger = init_logger()
+    try:
+        updater = Updater(token=secret_token)
+        updater.dispatcher.add_handler(CommandHandler('homework', on_homework))
+        updater.dispatcher.add_handler(CommandHandler('start', on_start))
+        updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
+        updater.dispatcher.add_handler(MessageHandler(Filters.text,
+                                                      say_anything))
+        updater.start_polling()
+        updater.idle()
+    except Exception as err:
+        msg = f'Сбой. Ошибка: {err}'
+        logger.error(msg)
 
 
 if __name__ == '__main__':
