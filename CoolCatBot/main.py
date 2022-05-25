@@ -43,6 +43,10 @@ def staying_alive():
     requests.get(google_url)
 
 
+def on_torrent():
+    pass
+
+
 def get_new_kot():
     try:
         response = requests.get(kots_url)
@@ -119,6 +123,7 @@ def main():
     logger = init_logger()
     try:
         updater = Updater(token=secret_token)
+        updater.dispatcher.add_handler(CommandHandler('torrent', on_torrent))
         updater.dispatcher.add_handler(CommandHandler('homework', on_homework))
         updater.dispatcher.add_handler(CommandHandler('start', on_start))
         updater.dispatcher.add_handler(CommandHandler('newcat', on_new_cat))
