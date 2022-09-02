@@ -5,7 +5,7 @@ import time
 from dotenv import load_dotenv
 import requests
 from telegram.ext import Updater, Filters, MessageHandler, CommandHandler
-from telegram import InlineKeyboardButton, ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup
 
 load_dotenv()
 secret_token = os.getenv('TOKEN')
@@ -17,17 +17,13 @@ google_url = 'https://www.google.com/'
 
 
 def init_buttons():
-    btn_newcat = InlineKeyboardButton('Give me a cool cat',
-                                      callback_data='/newcat')
-    btn_homework = InlineKeyboardButton('Check my homework',
-                                        callback_data='/homework')
-    buttons = ReplyKeyboardMarkup([[btn_newcat], [btn_homework]],
+    buttons = ReplyKeyboardMarkup([['/newcat'], ['/homework']],
                                   resize_keyboard=True)
     return buttons
 
 
 def init_logger():
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('err_log')
     logger.setLevel(logging.DEBUG)
     handler = RotatingFileHandler('CoolCatBot/cat_log.log',
                                   maxBytes=5000000, backupCount=3)
@@ -73,7 +69,6 @@ def get_homework_status():
         raise requests.exceptions.ConnectionError() from e
 
     homeworks = status.json().get('homeworks')
-    logging.info(f'answer from api is {str(homeworks)}')
     if homeworks:
         for work in homeworks:
             stat = work.get('status')
@@ -84,7 +79,6 @@ def get_homework_status():
                        f'\nКомментарий: {comment}'
                        )
             messages.append(message)
-
     return messages
 
 
